@@ -1071,29 +1071,214 @@ function closeRiwayat(){ document.getElementById('mo-riwayat').classList.remove(
 
 /* ══ EXPORT ══ */
 function exportDoc(){
-  var content = document.getElementById('surat').innerHTML;
   // Catat riwayat
   var perihal = state.jenis==='K'?(gv('fp')||''):'Surat Tugas';
   var nomor   = state.sistem==='SIPADEK'?(gv('fn')||''):'${nomor_naskah}';
-  apiCall({
-    action:'addRiwayat',
-    sistem: state.sistem,
-    jenis: state.jenis,
-    nomor: nomor,
-    perihal: perihal,
-    oleh: 'User'
-  }, function(){});
+  apiCall({action:'addRiwayat',sistem:state.sistem,jenis:state.jenis,nomor:nomor,perihal:perihal,oleh:'User'},function(){});
 
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'
-    +'<style>body{font-family:"Times New Roman",Times,serif;font-size:12pt;margin:2cm 2.5cm}'
-    +'.tvar{color:#000;font-style:normal;font-family:"Times New Roman",serif}'
-    +'.ph{color:#000}'
-    +'</style></head><body>'+content+'</body></html>';
-  var blob=new Blob([html],{type:'application/msword'});
+  var isSri = state.sistem==='SRIKANDI';
+  var isT   = state.jenis==='T';
+
+  /* ── KOP ── */
+  var kopStr =
+    '<table width="100%" style="border-collapse:collapse;border-bottom:3pt double #000;padding-bottom:6pt;margin-bottom:14pt">'
+    +'<tr>'
+    +'<td width="80" style="vertical-align:middle;text-align:center">'
+    +'<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Lambang_Kota_Jambi.png/120px-Lambang_Kota_Jambi.png" width="72" height="72">'
+    +'</td>'
+    +'<td style="vertical-align:middle;text-align:center">'
+    +'<div style="font-family:Arial,sans-serif;font-size:13pt;font-weight:normal;letter-spacing:0.5pt">PEMERINTAH KOTA JAMBI</div>'
+    +'<div style="font-family:Arial,sans-serif;font-size:20pt;font-weight:bold;letter-spacing:3pt;line-height:1.1">DINAS KESEHATAN</div>'
+    +'<div style="font-family:Arial,sans-serif;font-size:8pt;margin-top:3pt;line-height:1.7">'
+    +'Jalan H. Agus Salim, Kelurahan Handil Jaya, Kecamatan Jelutung, Jambi<br>'
+    +'Telp. (0741) 443712 Kota Baru &nbsp;|&nbsp; Laman http://dinkes.jambikota.go.id<br>'
+    +'Posel dinaskesehatankotajambi@gmail.com'
+    +'</div>'
+    +'</td>'
+    +'</tr>'
+    +'</table>';
+
+  var bodyStyle = 'font-family:Arial,sans-serif;font-size:12pt;color:#000;text-align:justify;';
+  var tbl = function(k,v){
+    return '<tr>'
+      +'<td style="width:115pt;vertical-align:top;font-family:Arial,sans-serif;font-size:12pt">'+k+'</td>'
+      +'<td style="width:14pt;vertical-align:top;font-family:Arial,sans-serif;font-size:12pt">:</td>'
+      +'<td style="font-family:Arial,sans-serif;font-size:12pt">'+v+'</td>'
+      +'</tr>';
+  };
+
+  var bodyHTML = '';
+
+  if(isT){
+    /* ── SURAT TUGAS ── */
+    var nomStr = isSri?'${nomor_naskah}':(gv('fn')||'');
+    var tglStr = isSri?'${tanggal_naskah}':fmtDp(gv('ft'));
+
+    // Dasar hukum
+    var dasarRows='';
+    for(var i=0;i<DASAR.length;i++){
+      dasarRows+='<tr><td style="width:20pt;vertical-align:top;font-family:Arial,sans-serif;font-size:12pt">'+(i+1)+'.</td>'
+        +'<td style="font-family:Arial,sans-serif;font-size:12pt;text-align:justify">'+DASAR[i]+'</td></tr>';
+    }
+
+    // Pegawai
+    var pegRows='';
+    if(state.selPeg.length){
+      for(var i=0;i<state.selPeg.length;i++){
+        var p=PEGAWAI[state.selPeg[i]];
+        if(i>0) pegRows+='<tr><td colspan="3" style="padding-top:8pt"></td></tr>';
+        pegRows+=tbl('Nama',p.nm)+tbl('NIP',p.nip)+tbl('Pangkat / Gol.',p.gol)+tbl('Jabatan',p.jab);
+      }
+    }
+
+    // Keperluan
+    var fu1=gv('fu1')||'';
+    var fu2='Kegiatan dimaksud dilaksanakan pada hari '+(gv('fu2h')||'___')+' tanggal '+(gv('fu2t')||'___')+' di '+(gv('fu2p')||'___')+' Kota Jambi.';
+    var fu3=gv('fu3')||'';
+
+    // TTD
+    var ttdStr='';
+    if(isSri){
+      ttdStr='<table width="100%" style="margin-top:24pt"><tr>'
+        +'<td width="55%"></td>'
+        +'<td style="text-align:left;font-family:Arial,sans-serif;font-size:12pt">'
+        +'<div>Jambi, ${tanggal_naskah}</div>'
+        +'<div style="margin-top:2pt">${jabatan_pengirim}</div>'
+        +'<div style="margin-top:50pt">'
+        +'<table style="border-collapse:collapse"><tr>'
+        +'<td style="font-family:Arial,sans-serif;font-size:12pt;padding-right:10pt">${ttd_pengirim}</td>'
+        +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+        +'<div style="font-weight:bold;text-decoration:underline">${nama_pengirim}</div>'
+        +'<div>Pembina</div>'
+        +'<div>NIP. ${nip_pengirim}</div>'
+        +'</td></tr></table>'
+        +'</div>'
+        +'</td></tr></table>';
+    } else {
+      ttdStr='<table width="100%" style="margin-top:24pt"><tr>'
+        +'<td width="55%"></td>'
+        +'<td style="text-align:left;font-family:Arial,sans-serif;font-size:12pt">'
+        +'<div>Jambi, '+tglStr+'</div>'
+        +'<div style="margin-top:4pt;font-size:11pt">Ditandatangani secara elektronik oleh:</div>'
+        +'<table style="border-collapse:collapse;margin-top:6pt"><tr>'
+        +'<td style="font-family:Arial,sans-serif;font-size:14pt;font-weight:bold;padding-right:12pt;vertical-align:top">#TTE</td>'
+        +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+        +'<div style="font-size:11pt">Kepala Dinas Kesehatan Kota Jambi</div>'
+        +'<div style="font-weight:bold">Dr. dr. Elvi Roza.MKes</div>'
+        +'<div>Pembina</div>'
+        +'<div>Nip. 19750417 200604 2 009</div>'
+        +'</td></tr></table>'
+        +'</td></tr></table>';
+    }
+
+    bodyHTML =
+      '<div style="text-align:center;margin-bottom:14pt">'
+      +'<div style="font-family:Arial,sans-serif;font-size:12pt;font-weight:bold;text-decoration:underline;letter-spacing:1pt">SURAT TUGAS</div>'
+      +'<div style="font-family:Arial,sans-serif;font-size:12pt">Nomor : '+nomStr+'</div>'
+      +'</div>'
+      +'<table style="border-collapse:collapse;width:100%;margin-bottom:14pt">'
+      +'<tr><td style="vertical-align:top;width:40pt;font-family:Arial,sans-serif;font-size:12pt">Dasar</td>'
+      +'<td style="vertical-align:top;width:14pt;font-family:Arial,sans-serif;font-size:12pt">:</td>'
+      +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+      +'<table style="border-collapse:collapse;width:100%">'+dasarRows+'</table>'
+      +'</td></tr></table>'
+      +'<div style="font-family:Arial,sans-serif;font-size:12pt;font-weight:bold;text-decoration:underline;text-align:center;margin:14pt 0 10pt">MENUGASKAN</div>'
+      +'<table style="border-collapse:collapse;width:100%;margin-bottom:14pt">'
+      +'<tr><td style="vertical-align:top;width:40pt;font-family:Arial,sans-serif;font-size:12pt">Kepada</td>'
+      +'<td style="vertical-align:top;width:14pt;font-family:Arial,sans-serif;font-size:12pt">:</td>'
+      +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+      +'<table style="border-collapse:collapse;width:100%">'+pegRows+'</table>'
+      +'</td></tr></table>'
+      +'<table style="border-collapse:collapse;width:100%;margin-bottom:14pt">'
+      +'<tr><td style="vertical-align:top;width:40pt;font-family:Arial,sans-serif;font-size:12pt">Untuk</td>'
+      +'<td style="vertical-align:top;width:14pt;font-family:Arial,sans-serif;font-size:12pt">:</td>'
+      +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+      +'<table style="border-collapse:collapse;width:100%">'
+      +(fu1?'<tr><td style="width:20pt;vertical-align:top">1.</td><td style="text-align:justify;font-family:Arial,sans-serif;font-size:12pt">'+fu1+'</td></tr>':'')
+      +'<tr><td style="width:20pt;vertical-align:top">2.</td><td style="text-align:justify;font-family:Arial,sans-serif;font-size:12pt">'+fu2+'</td></tr>'
+      +(fu3?'<tr><td style="width:20pt;vertical-align:top">3.</td><td style="text-align:justify;font-family:Arial,sans-serif;font-size:12pt">'+fu3+'</td></tr>':'')
+      +'</table>'
+      +'</td></tr></table>'
+      +ttdStr;
+
+  } else {
+    /* ── SURAT KELUAR ── */
+    var nomStr = isSri?'${nomor_naskah}':(gv('fn')||'');
+    var tglStr = isSri?'${tanggal_naskah}':fmtDp(gv('ft'));
+    var sifat=gv('fs')||'Biasa', lamp=gv('fl')||'-', perihal=gv('fp')||'', kepada=gv('ftu')||'', kota=gv('fkota')||'Kota Jambi', isi=gv('fisi')||'';
+
+    var ttdStr='';
+    if(isSri){
+      ttdStr='<table width="100%" style="margin-top:24pt"><tr>'
+        +'<td width="55%"></td>'
+        +'<td style="text-align:left;font-family:Arial,sans-serif;font-size:12pt">'
+        +'<div>${jabatan_pengirim}</div>'
+        +'<div style="margin-top:50pt">'
+        +'<table style="border-collapse:collapse"><tr>'
+        +'<td style="font-family:Arial,sans-serif;font-size:12pt;padding-right:10pt">${ttd_pengirim}</td>'
+        +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+        +'<div style="font-weight:bold;text-decoration:underline">${nama_pengirim}</div>'
+        +'<div>Pembina</div>'
+        +'<div>NIP. ${nip_pengirim}</div>'
+        +'</td></tr></table>'
+        +'</div>'
+        +'</td></tr></table>';
+    } else {
+      ttdStr='<table width="100%" style="margin-top:24pt"><tr>'
+        +'<td width="55%"></td>'
+        +'<td style="text-align:left;font-family:Arial,sans-serif;font-size:12pt">'
+        +'<div style="font-size:11pt">Ditandatangani secara elektronik oleh:</div>'
+        +'<table style="border-collapse:collapse;margin-top:6pt"><tr>'
+        +'<td style="font-family:Arial,sans-serif;font-size:14pt;font-weight:bold;padding-right:12pt;vertical-align:top">#TTE</td>'
+        +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+        +'<div style="font-size:11pt">Kepala Dinas Kesehatan Kota Jambi</div>'
+        +'<div style="font-weight:bold">Dr. dr. Elvi Roza.MKes</div>'
+        +'<div>Pembina</div>'
+        +'<div>Nip. 19750417 200604 2 009</div>'
+        +'</td></tr></table>'
+        +'</td></tr></table>';
+    }
+
+    bodyHTML =
+      '<table style="border-collapse:collapse;width:100%;margin-bottom:16pt">'
+      +'<tr>'
+      +'<td style="vertical-align:top;font-family:Arial,sans-serif;font-size:12pt">'
+      +tbl('Nomor',nomStr)+tbl('Sifat',sifat)+tbl('Lampiran',lamp)
+      +'<tr><td style="width:115pt;font-family:Arial,sans-serif;font-size:12pt">Perihal</td>'
+      +'<td style="width:14pt;font-family:Arial,sans-serif;font-size:12pt">:</td>'
+      +'<td style="font-family:Arial,sans-serif;font-size:12pt;font-weight:bold">'+perihal+'</td></tr>'
+      +'</td>'
+      +'<td style="text-align:right;vertical-align:top;font-family:Arial,sans-serif;font-size:12pt;white-space:nowrap;padding-left:20pt">'
+      +'Jambi, '+tglStr
+      +'</td>'
+      +'</tr></table>'
+      +'<div style="font-family:Arial,sans-serif;font-size:12pt;margin-bottom:16pt">'
+      +'<div>Kepada Yth.</div>'
+      +'<div><b>'+kepada+'</b></div>'
+      +'<div>di</div>'
+      +'<div>'+kota+'</div>'
+      +'</div>'
+      +'<div style="font-family:Arial,sans-serif;font-size:12pt;text-align:justify;line-height:1.8;margin-bottom:24pt;white-space:pre-wrap">'+isi+'</div>'
+      +ttdStr;
+  }
+
+  var fullHTML = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    +'<style>'
+    +'@page{size:A4;margin:1.5cm 2.5cm 2cm 2.5cm}'
+    +'body{margin:0;padding:0;background:#fff}'
+    +'</style>'
+    +'</head><body>'
+    +'<div style="'+bodyStyle+'">'
+    +kopStr
+    +bodyHTML
+    +'</div>'
+    +'</body></html>';
+
+  var blob=new Blob([fullHTML],{type:'application/msword'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
   a.href=url;
-  a.download='NaskahDinas_'+(state.jenis==='T'?'SuratTugas':'SuratKeluar')+'_'+state.sistem+'.doc';
+  a.download='NaskahDinas_'+(isT?'SuratTugas':'SuratKeluar')+'_'+state.sistem+'.doc';
   a.click();
   URL.revokeObjectURL(url);
   toast('✅ File Word berhasil diunduh');
