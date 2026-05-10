@@ -1113,90 +1113,113 @@ function exportDoc(){
     /* ── SURAT TUGAS ── */
     var nomStr = isSri?'${nomor_naskah}':(gv('fn')||'');
     var tglStr = isSri?'${tanggal_naskah}':fmtDp(gv('ft'));
+    var f = 'font-family:Arial,sans-serif;font-size:12pt;';
 
     // Dasar hukum
     var dasarRows='';
     for(var i=0;i<DASAR.length;i++){
-      dasarRows+='<tr><td style="width:20pt;vertical-align:top;font-family:Arial,sans-serif;font-size:12pt">'+(i+1)+'.</td>'
-        +'<td style="font-family:Arial,sans-serif;font-size:12pt;text-align:justify">'+DASAR[i]+'</td></tr>';
+      dasarRows+='<tr>'
+        +'<td style="width:18pt;vertical-align:top;'+f+'">'+(i+1)+'.</td>'
+        +'<td style="'+f+'text-align:justify;line-height:1.5">'+DASAR[i]+'</td>'
+        +'</tr><tr><td colspan="2" style="height:4pt"></td></tr>';
     }
 
-    // Pegawai
+    // Pegawai — format: Kepada : 1. Nama : ... NIP : ...
     var pegRows='';
-    if(state.selPeg.length){
-      for(var i=0;i<state.selPeg.length;i++){
-        var p=PEGAWAI[state.selPeg[i]];
-        if(i>0) pegRows+='<tr><td colspan="3" style="padding-top:8pt"></td></tr>';
-        pegRows+=tbl('Nama',p.nm)+tbl('NIP',p.nip)+tbl('Pangkat / Gol.',p.gol)+tbl('Jabatan',p.jab);
-      }
+    for(var i=0;i<state.selPeg.length;i++){
+      var p=PEGAWAI[state.selPeg[i]];
+      pegRows+='<tr>'
+        +'<td style="width:22pt;vertical-align:top;'+f+'">'+(i+1)+'.</td>'
+        +'<td style="'+f+'">'
+        +'<table style="border-collapse:collapse;width:100%">'
+        +'<tr><td style="width:90pt;'+f+'">Nama</td><td style="width:12pt;'+f+'">:</td><td style="'+f+'">'+p.nm+'</td></tr>'
+        +'<tr><td style="'+f+'">NIP</td><td style="'+f+'">:</td><td style="'+f+'">'+p.nip+'</td></tr>'
+        +'<tr><td style="'+f+'">Pangkat/ Gol</td><td style="'+f+'">:</td><td style="'+f+'">'+p.gol+'</td></tr>'
+        +'<tr><td style="'+f+'">Jabatan</td><td style="'+f+'">:</td><td style="'+f+'">'+p.jab+'</td></tr>'
+        +'</table>'
+        +'</td></tr>'
+        +'<tr><td colspan="2" style="height:8pt"></td></tr>';
     }
+    if(!pegRows) pegRows='<tr><td colspan="2" style="'+f+';color:#999;font-style:italic">— Belum ada pegawai —</td></tr>';
 
     // Keperluan
     var fu1=gv('fu1')||'';
     var fu2='Kegiatan dimaksud dilaksanakan pada hari '+(gv('fu2h')||'___')+' tanggal '+(gv('fu2t')||'___')+' di '+(gv('fu2p')||'___')+' Kota Jambi.';
     var fu3=gv('fu3')||'';
 
-    // TTD
+    // TTD — Jambi, tgl di KIRI bawah sesuai template
     var ttdStr='';
     if(isSri){
-      ttdStr='<table width="100%" style="margin-top:24pt"><tr>'
-        +'<td width="55%"></td>'
-        +'<td style="text-align:left;font-family:Arial,sans-serif;font-size:12pt">'
+      ttdStr='<table style="border-collapse:collapse;width:100%;margin-top:20pt">'
+        +'<tr>'
+        +'<td style="width:55%;vertical-align:top"></td>'
+        +'<td style="vertical-align:top;'+f+'">'
         +'<div>Jambi, ${tanggal_naskah}</div>'
         +'<div style="margin-top:2pt">${jabatan_pengirim}</div>'
-        +'<div style="margin-top:50pt">'
+        +'<div style="margin-top:48pt">'
         +'<table style="border-collapse:collapse"><tr>'
-        +'<td style="font-family:Arial,sans-serif;font-size:12pt;padding-right:10pt">${ttd_pengirim}</td>'
-        +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+        +'<td style="vertical-align:top;padding-right:12pt;'+f+'">${ttd_pengirim}</td>'
+        +'<td style="vertical-align:top;'+f+'">'
         +'<div style="font-weight:bold;text-decoration:underline">${nama_pengirim}</div>'
         +'<div>Pembina</div>'
         +'<div>NIP. ${nip_pengirim}</div>'
         +'</td></tr></table>'
         +'</div>'
-        +'</td></tr></table>';
+        +'</td>'
+        +'</tr></table>';
     } else {
-      ttdStr='<table width="100%" style="margin-top:24pt"><tr>'
-        +'<td width="55%"></td>'
-        +'<td style="text-align:left;font-family:Arial,sans-serif;font-size:12pt">'
+      ttdStr='<table style="border-collapse:collapse;width:100%;margin-top:20pt">'
+        +'<tr>'
+        +'<td style="width:55%"></td>'
+        +'<td style="vertical-align:top;'+f+'">'
         +'<div>Jambi, '+tglStr+'</div>'
-        +'<div style="margin-top:4pt;font-size:11pt">Ditandatangani secara elektronik oleh:</div>'
+        +'<div style="margin-top:6pt;font-size:11pt">Ditandatangani secara elektronik oleh:</div>'
         +'<table style="border-collapse:collapse;margin-top:6pt"><tr>'
-        +'<td style="font-family:Arial,sans-serif;font-size:14pt;font-weight:bold;padding-right:12pt;vertical-align:top">#TTE</td>'
-        +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+        +'<td style="font-weight:bold;font-size:14pt;padding-right:12pt;vertical-align:top;font-family:Arial,sans-serif">#TTE</td>'
+        +'<td style="'+f+'">'
         +'<div style="font-size:11pt">Kepala Dinas Kesehatan Kota Jambi</div>'
         +'<div style="font-weight:bold">Dr. dr. Elvi Roza.MKes</div>'
         +'<div>Pembina</div>'
         +'<div>Nip. 19750417 200604 2 009</div>'
         +'</td></tr></table>'
-        +'</td></tr></table>';
+        +'</td>'
+        +'</tr></table>';
     }
 
     bodyHTML =
-      '<div style="text-align:center;margin-bottom:14pt">'
-      +'<div style="font-family:Arial,sans-serif;font-size:12pt;font-weight:bold;text-decoration:underline;letter-spacing:1pt">SURAT TUGAS</div>'
-      +'<div style="font-family:Arial,sans-serif;font-size:12pt">Nomor : '+nomStr+'</div>'
+      // Judul
+      '<div style="text-align:center;margin-bottom:16pt">'
+      +'<div style="'+f+'font-weight:bold;letter-spacing:2pt">SURAT TUGAS</div>'
+      +'<div style="'+f+'margin-top:4pt">NOMOR: '+nomStr+'</div>'
       +'</div>'
-      +'<table style="border-collapse:collapse;width:100%;margin-bottom:14pt">'
-      +'<tr><td style="vertical-align:top;width:40pt;font-family:Arial,sans-serif;font-size:12pt">Dasar</td>'
-      +'<td style="vertical-align:top;width:14pt;font-family:Arial,sans-serif;font-size:12pt">:</td>'
-      +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+      // Dasar
+      +'<table style="border-collapse:collapse;width:100%;margin-bottom:12pt">'
+      +'<tr>'
+      +'<td style="width:50pt;vertical-align:top;'+f+'">Dasar</td>'
+      +'<td style="width:14pt;vertical-align:top;'+f+'">:</td>'
+      +'<td style="'+f+'">'
       +'<table style="border-collapse:collapse;width:100%">'+dasarRows+'</table>'
       +'</td></tr></table>'
-      +'<div style="font-family:Arial,sans-serif;font-size:12pt;font-weight:bold;text-decoration:underline;text-align:center;margin:14pt 0 10pt">MENUGASKAN</div>'
-      +'<table style="border-collapse:collapse;width:100%;margin-bottom:14pt">'
-      +'<tr><td style="vertical-align:top;width:40pt;font-family:Arial,sans-serif;font-size:12pt">Kepada</td>'
-      +'<td style="vertical-align:top;width:14pt;font-family:Arial,sans-serif;font-size:12pt">:</td>'
-      +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+      // MEMERINTAHKAN
+      +'<div style="text-align:center;font-weight:bold;'+f+'margin:14pt 0 10pt">MEMERINTAHKAN</div>'
+      // Kepada
+      +'<table style="border-collapse:collapse;width:100%;margin-bottom:12pt">'
+      +'<tr>'
+      +'<td style="width:50pt;vertical-align:top;'+f+'">Kepada</td>'
+      +'<td style="width:14pt;vertical-align:top;'+f+'">:</td>'
+      +'<td style="'+f+'">'
       +'<table style="border-collapse:collapse;width:100%">'+pegRows+'</table>'
       +'</td></tr></table>'
-      +'<table style="border-collapse:collapse;width:100%;margin-bottom:14pt">'
-      +'<tr><td style="vertical-align:top;width:40pt;font-family:Arial,sans-serif;font-size:12pt">Untuk</td>'
-      +'<td style="vertical-align:top;width:14pt;font-family:Arial,sans-serif;font-size:12pt">:</td>'
-      +'<td style="font-family:Arial,sans-serif;font-size:12pt">'
+      // Untuk
+      +'<table style="border-collapse:collapse;width:100%;margin-bottom:12pt">'
+      +'<tr>'
+      +'<td style="width:50pt;vertical-align:top;'+f+'">Untuk</td>'
+      +'<td style="width:14pt;vertical-align:top;'+f+'">:</td>'
+      +'<td style="'+f+'">'
       +'<table style="border-collapse:collapse;width:100%">'
-      +(fu1?'<tr><td style="width:20pt;vertical-align:top">1.</td><td style="text-align:justify;font-family:Arial,sans-serif;font-size:12pt">'+fu1+'</td></tr>':'')
-      +'<tr><td style="width:20pt;vertical-align:top">2.</td><td style="text-align:justify;font-family:Arial,sans-serif;font-size:12pt">'+fu2+'</td></tr>'
-      +(fu3?'<tr><td style="width:20pt;vertical-align:top">3.</td><td style="text-align:justify;font-family:Arial,sans-serif;font-size:12pt">'+fu3+'</td></tr>':'')
+      +(fu1?'<tr><td style="width:18pt;vertical-align:top;'+f+'">1.</td><td style="'+f+'text-align:justify">'+fu1+'</td></tr>':'')
+      +'<tr><td style="width:18pt;vertical-align:top;'+f+'">'+(fu1?'2':'1')+'.</td><td style="'+f+'text-align:justify">'+fu2+'</td></tr>'
+      +(fu3?'<tr><td style="width:18pt;vertical-align:top;'+f+'">'+(fu1?'3':'2')+'.</td><td style="'+f+'text-align:justify">'+fu3+'</td></tr>':'')
       +'</table>'
       +'</td></tr></table>'
       +ttdStr;
