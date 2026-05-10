@@ -331,7 +331,8 @@ input:disabled{background:#f5f5f5;color:#999;cursor:not-allowed;font-style:itali
       <button class="btn bo" id="btn-prev" onclick="App.prevStep()" style="display:none">← Kembali</button>
       <button class="btn bp" id="btn-next" onclick="App.nextStep()">Lanjut →</button>
     </div>
-    <button class="btn bg" id="btn-exp" onclick="App.exportDoc()" style="display:none">📄 Download Word (.doc)</button>
+    <button class="btn bg" id="btn-exp" onclick="App.exportDoc()" style="display:none">📄 Download Word (.docx)</button>
+    <button class="btn bo" id="btn-pdf" onclick="App.exportPDF()" style="display:none">📥 Download PDF</button>
     <button class="btn bo" id="btn-prt" onclick="window.print()" style="display:none">🖨 Cetak / Print</button>
   </div>
 </aside>
@@ -566,6 +567,7 @@ function updateNav(){
   document.getElementById('btn-prev').style.display = state.step>1?'flex':'none';
   document.getElementById('btn-next').style.display = state.step<3?'flex':'none';
   document.getElementById('btn-exp').style.display  = state.step===3?'flex':'none';
+  document.getElementById('btn-pdf').style.display  = state.step===3?'flex':'none';
   document.getElementById('btn-prt').style.display  = state.step===3?'flex':'none';
 }
 
@@ -1069,7 +1071,86 @@ function openRiwayat(){
 }
 function closeRiwayat(){ document.getElementById('mo-riwayat').classList.remove('show'); }
 
-/* ══ EXPORT ══ */
+/* ══ EXPORT HELPER ══ */
+function getExportCSS(){
+  // CSS yang sama persis dengan preview — dipastikan font Arial dan layout identik
+  return [
+    'body,*{box-sizing:border-box;margin:0;padding:0}',
+    'body{font-family:Arial,sans-serif;font-size:12pt;color:#000;background:#fff}',
+    '.sp{font-family:Arial,sans-serif;font-size:12pt;color:#000;line-height:1.4}',
+    '.sp.A4{width:210mm;padding:15mm 25mm 20mm 25mm}',
+    '.sp.Legal{width:215.9mm;padding:15mm 25mm 20mm 25mm}',
+    '.sp.F4{width:215.9mm;padding:15mm 25mm 20mm 25mm}',
+    '.kop-wrap{display:flex;align-items:center;gap:12px;padding-bottom:8px;border-bottom:4px double #000;margin-bottom:20px}',
+    '.kop-logo{width:75px;height:75px;flex-shrink:0}',
+    '.kop-logo img{width:75px;height:75px;object-fit:contain}',
+    '.kop-text{flex:1;text-align:center}',
+    '.kop-pem{font-family:Arial,sans-serif;font-size:12pt}',
+    '.kop-din{font-family:Arial,sans-serif;font-size:20pt;font-weight:bold;letter-spacing:2px;line-height:1.1}',
+    '.kop-adr{font-family:Arial,sans-serif;font-size:8pt;margin-top:4px;line-height:1.6}',
+    '.sk-meta{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}',
+    '.sk-row{display:flex;margin-bottom:2px;font-size:12pt;font-family:Arial,sans-serif}',
+    '.sk-key{width:80px;flex-shrink:0}',
+    '.sk-sep{width:18px;flex-shrink:0}',
+    '.sk-val{flex:1}',
+    '.sk-isi{text-align:justify;line-height:1.85;margin-bottom:24px;white-space:pre-wrap;font-size:12pt;font-family:Arial,sans-serif}',
+    '.st-head{text-align:center;margin:0 0 16px}',
+    '.st-head .t1{font-size:13pt;font-weight:bold;letter-spacing:1px;font-family:Arial,sans-serif}',
+    '.st-head .t2{font-size:12pt;font-family:Arial,sans-serif}',
+    '.st-row{display:flex;align-items:flex-start;margin-bottom:14px;font-size:12pt;font-family:Arial,sans-serif}',
+    '.st-key{width:80px;flex-shrink:0}',
+    '.st-sep{width:18px;flex-shrink:0}',
+    '.st-val{flex:1}',
+    '.ol-dasar{list-style:none;padding:0;margin:0}',
+    '.ol-dasar li{display:flex;gap:6px;margin-bottom:6px;font-size:12pt;line-height:1.6;font-family:Arial,sans-serif}',
+    '.ol-dasar li .dn{min-width:18px;flex-shrink:0}',
+    '.mrt-head{text-align:center;font-weight:bold;font-size:12pt;margin:4px 0 14px;font-family:Arial,sans-serif}',
+    '.peg-blk{margin-bottom:14px}',
+    '.peg-row{display:flex;font-size:12pt;margin-bottom:2px;font-family:Arial,sans-serif}',
+    '.pk{width:115px;flex-shrink:0}',
+    '.ps{width:14px;flex-shrink:0}',
+    '.pv{flex:1}',
+    '.ul-item{display:flex;gap:6px;margin-bottom:6px;font-size:12pt;line-height:1.6;font-family:Arial,sans-serif;text-align:justify}',
+    '.ul-num{min-width:18px;flex-shrink:0}',
+    '.ttd-sri{display:flex;justify-content:flex-end;margin-top:24px}',
+    '.ttd-sri-in{text-align:right;min-width:220px}',
+    '.ttd-sri-jab{font-size:12pt;margin-bottom:2px;font-family:Arial,sans-serif}',
+    '.ttd-sri-tgl{font-size:12pt;margin-bottom:2px;font-family:Arial,sans-serif}',
+    '.ttd-sri-row{display:flex;align-items:flex-start;gap:14px;justify-content:flex-end;margin-top:4px}',
+    '.ttd-sri-l{font-size:12pt;white-space:nowrap;padding-top:2px;font-family:Arial,sans-serif}',
+    '.ttd-sri-r{text-align:left}',
+    '.ttd-sri-nm{font-size:12pt;font-weight:bold;text-decoration:underline;font-family:Arial,sans-serif}',
+    '.ttd-sub{font-size:12pt;font-family:Arial,sans-serif}',
+    '.ttd-spd{display:flex;justify-content:flex-end;margin-top:24px}',
+    '.ttd-spd-in{text-align:left;min-width:260px}',
+    '.ttd-spd-row{display:flex;align-items:flex-start;gap:12px}',
+    '.ttd-spd-tte{font-size:14pt;font-weight:bold;white-space:nowrap;padding-top:2px;font-family:Arial,sans-serif}',
+    '.ttd-spd-r{text-align:left}',
+    '.ttd-spd-jab{font-size:12pt;font-family:Arial,sans-serif}',
+    '.ttd-spd-nm{font-size:12pt;font-weight:bold;font-family:Arial,sans-serif}',
+    '.tvar{color:#000;font-style:normal;font-family:Arial,sans-serif;font-size:12pt}',
+    '.ph{color:#000;font-style:normal}',
+    '.u2sl{border:none;border-bottom:1.5px solid #000;display:inline-block;padding:0 3px;min-width:80px}',
+    'table{border-collapse:collapse;width:100%}',
+  ].join('\n');
+}
+
+function buildExportHTML(){
+  var css = getExportCSS();
+  var uk  = state.uk || 'A4';
+  var inner = document.getElementById('surat').innerHTML;
+  // Ganti .tvar jadi warna hitam (bukan biru) untuk dokumen final
+  inner = inner.replace(/class="tvar"/g, 'class="tvar" style="color:#000;font-style:normal;font-family:Arial,sans-serif"');
+  inner = inner.replace(/class="ph"/g,  'class="ph" style="color:#000;font-style:normal"');
+  return '<!DOCTYPE html>\n<html><head><meta charset="UTF-8">'
+    +'<style>'+css+'</style>'
+    +'</head><body>'
+    +'<div class="sp '+uk+'" style="font-family:Arial,sans-serif;font-size:12pt">'
+    +inner
+    +'</div></body></html>';
+}
+
+/* ══ EXPORT DOCX ══ */
 function exportDoc(){
   // Catat riwayat
   var perihal = state.jenis==='K'?(gv('fp')||''):'Surat Tugas';
@@ -1340,7 +1421,7 @@ return {
   saveDasar:saveDasar, resetDasarForm:resetDasarForm,
   resetDasarDefault:resetDasarDefault,
   openRiwayat:openRiwayat, closeRiwayat:closeRiwayat,
-  exportDoc:exportDoc, init:init,
+  exportDoc:exportDoc, exportPDF:exportPDF, init:init,
 };
 
 })();
